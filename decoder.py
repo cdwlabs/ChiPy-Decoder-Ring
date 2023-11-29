@@ -105,7 +105,7 @@ def truncate_component(component: str, name: str) -> str:
         return leftovers
 
 
-def create_netbios_compatable_name(building_id: str, device_function: str, entity: str, component: str, api_key: str, site_csv: str) -> str:
+def create_netbios_compatable_name(building_id: str, device_function: str, entity: str, component: str, api_key: str, site_csv: str = 'Buildings.csv') -> str:
     sites = read_csv(site_csv)
     normal_building_id = normalize_building_id(building_id)
     formatted_device_function = format_device_function(device_function)
