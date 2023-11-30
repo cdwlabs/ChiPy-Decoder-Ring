@@ -2,7 +2,6 @@ import csv
 
 import httpx
 
-
 def read_csv(filename: str) -> dict:
     addresses = {}
     with open(filename) as file:
@@ -20,16 +19,16 @@ def get_address_by_building_id(csv_data: dict, building_id: str) -> str:
         raise KeyError(f"The value {building_id} is not in lookup csv.")
 
 
-def geo_lookup_by_address(lookup_address: str, api_key: str) -> dict:
+def geo_lookup_by_address(lookup_address: str, api_key: str, client = httpx.Client()) -> dict:
     base_url = "https://api.geoapify.com/v1/geocode/search?text="
     params = f"&format=json&apiKey={api_key}"
-    response = httpx.get(f"{base_url}{lookup_address}{params}")
-    response.raise_for_status
+    response = client.get(f"{base_url}{lookup_address}{params}")
+    response.raise_for_status()
     return response.json()
 
 
-def get_timezone_by_address(lookup_address: str, api_key: str) -> str:
-    geo_data = geo_lookup_by_address(lookup_address, api_key)
+def get_timezone_by_address(lookup_address: str, api_key: str, client = httpx.Client()) -> str:
+    geo_data = geo_lookup_by_address(lookup_address, api_key, client)
     # If confidence is > 45% return first result's timezone
     if geo_data["results"][0]["rank"]["confidence"] > 0.45:
         return geo_data["results"][0]["timezone"]["abbreviation_STD"]
@@ -70,7 +69,7 @@ def format_device_function(device: str) -> str:
             raise ValueError("Invalid option")
 
 
-def netbios_compatability_check(name: str) -> None:
+def netbios_compatibility_check(name: str) -> None:
     disallowed = ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
     min_length = 1
     max_length = 15
@@ -105,21 +104,21 @@ def truncate_component(component: str, name: str) -> str:
         return leftovers
 
 
-def create_netbios_compatable_name(building_id: str, device_function: str, entity: str, component: str, api_key: str, site_csv: str = 'Buildings.csv') -> str:
+def create_netbios_compatible_name(building_id: str, device_function: str, entity: str, component: str, api_key: str, site_csv: str = 'Buildings.csv', client = httpx.Client()) -> str:
     sites = read_csv(site_csv)
     normal_building_id = normalize_building_id(building_id)
     formatted_device_function = format_device_function(device_function)
     address = get_address_by_building_id(sites, building_id)
-    timezone = get_timezone_by_address(address, api_key)
+    timezone = get_timezone_by_address(address, api_key, client=client)
     checked_entity = entity_check(entity)
     partial_name = f"{normal_building_id}{formatted_device_function}{timezone}{checked_entity}"
     formatted_component = truncate_component(component, partial_name)
     final_name = partial_name + formatted_component
-    netbios_compatability_check(final_name)
+    netbios_compatibility_check(final_name)
     return final_name
 
 def main(**kwargs) -> str:
-    return create_netbios_compatable_name(**kwargs)
+    return create_netbios_compatible_name(**kwargs)
 
 if __name__ == "__main__":
     main()
