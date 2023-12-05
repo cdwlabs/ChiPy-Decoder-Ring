@@ -1,0 +1,5 @@
+pytest
+isort
+ruff
+pytest-httpx
+python-dotenv
