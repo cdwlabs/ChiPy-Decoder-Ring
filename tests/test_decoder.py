@@ -2,7 +2,7 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-import src.dmw_decoder.decoder as decoder
+import src.dmw_decoder.logic as logic
 
 mock_csv_dict = {
     "01": {
@@ -49,48 +49,48 @@ mock_csv_dict = {
 
 
 def test_normalize_building_id():
-    assert decoder.normalize_building_id("5") == "05"
-    assert decoder.normalize_building_id("15") == "15"
+    assert logic.normalize_building_id("5") == "05"
+    assert logic.normalize_building_id("15") == "15"
     with pytest.raises(ValueError):
-        decoder.normalize_building_id("not a number")
+        logic.normalize_building_id("not a number")
     with pytest.raises(ValueError):
-        decoder.normalize_building_id(150)
+        logic.normalize_building_id(150)
 
 
 def test_format_device_function():
-    assert decoder.format_device_function("server") == "s"
-    assert decoder.format_device_function("network") == "n"
-    assert decoder.format_device_function("virtualized") == "v"
-    assert decoder.format_device_function("app") == "a"
-    assert decoder.format_device_function("other") == "o"
-    assert decoder.format_device_function("sErVeR") == "s"
-    assert decoder.format_device_function("Network   ") == "n"
-    assert decoder.format_device_function("  virtualized") == "v"
-    assert decoder.format_device_function("  other ") == "o"
-    assert decoder.format_device_function(" seRver ") == "s"
+    assert logic.format_device_function("server") == "s"
+    assert logic.format_device_function("network") == "n"
+    assert logic.format_device_function("virtualized") == "v"
+    assert logic.format_device_function("app") == "a"
+    assert logic.format_device_function("other") == "o"
+    assert logic.format_device_function("sErVeR") == "s"
+    assert logic.format_device_function("Network   ") == "n"
+    assert logic.format_device_function("  virtualized") == "v"
+    assert logic.format_device_function("  other ") == "o"
+    assert logic.format_device_function(" seRver ") == "s"
     with pytest.raises(ValueError):
-        decoder.format_device_function("cluster")
+        logic.format_device_function("cluster")
 
 
 @pytest.mark.parametrize("disallowed", ["\\", "/", ":", "*", "?", '"', "<", ">", "|"])
 def test_netbios_compatibility_check_disallowed(disallowed):
     with pytest.raises(ValueError) as e_char:
-        decoder.netbios_compatibility_check(disallowed)
+        logic.netbios_compatibility_check(disallowed)
     assert str(e_char.value) == "Name contains disallowed character"
     with pytest.raises(ValueError) as e_min:
-        decoder.netbios_compatibility_check("")
+        logic.netbios_compatibility_check("")
     assert str(e_min.value) == "Name does not meet minimum length"
 
 
 def test_netbios_compatibility_check_min():
     with pytest.raises(ValueError) as e_char:
-        decoder.netbios_compatibility_check("")
+        logic.netbios_compatibility_check("")
     assert str(e_char.value) == "Name does not meet minimum length"
 
 
 def test_netbios_compatibility_check_max():
     with pytest.raises(ValueError) as e_char:
-        decoder.netbios_compatibility_check("Too long for NetBIOS I'm afraid")
+        logic.netbios_compatibility_check("Too long for NetBIOS I'm afraid")
     assert str(e_char.value) == "Name exceeds maximum length"
 
 
@@ -104,14 +104,14 @@ def test_netbios_compatibility_check_max():
     ],
 )
 def test_truncate_component(test_name, test_component, expected):
-    result = decoder.truncate_component(name=test_name, component=test_component)
+    result = logic.truncate_component(name=test_name, component=test_component)
     assert len(result) + len(test_name) <= 15
     assert result == expected
 
 
 def test_truncate_component_got_long_name():
     with pytest.raises(ValueError) as e_char:
-        decoder.truncate_component(name="This name is too long", component="NA")
+        logic.truncate_component(name="This name is too long", component="NA")
     assert str(e_char.value) == "Name exceeds maximum length"
 
 
@@ -129,24 +129,24 @@ def test_truncate_component_got_long_name():
     ],
 )
 def test_get_address_by_building_id(id, expected_address):
-    address = decoder.get_address_by_building_id(mock_csv_dict, id)
+    address = logic.get_address_by_building_id(mock_csv_dict, id)
     assert address == expected_address
 
 
 def test_get_address_by_bad_building_id():
     bad_building_id = "33"
     with pytest.raises(KeyError) as e_char:
-        decoder.get_address_by_building_id(mock_csv_dict, bad_building_id)
+        logic.get_address_by_building_id(mock_csv_dict, bad_building_id)
     assert e_char.value.args[0] == f"The value {bad_building_id} is not in lookup csv."
 
 
 def test_entity_check():
-    assert decoder.entity_check("Valid") == "Valid"
+    assert logic.entity_check("Valid") == "Valid"
     with pytest.raises(ValueError) as e_char:
-        decoder.entity_check("A")
+        logic.entity_check("A")
     assert e_char.value.args[0] == "Name does not meet minimum length"
     with pytest.raises(ValueError) as e_char:
-        decoder.entity_check("This is more than seven chars")
+        logic.entity_check("This is more than seven chars")
     assert e_char.value.args[0] == "Name exceeds maximum length"
 
 
@@ -156,7 +156,7 @@ def test_geo_lookup_by_address(httpx_mock: HTTPXMock):
     with httpx.Client() as client:
         address = "address"
         api_key = "key"
-        assert decoder.geo_lookup_by_address(address, api_key, client) == {
+        assert logic.geo_lookup_by_address(address, api_key, client) == {
             "key1": "value1",
             "key2": "value2",
         }
@@ -166,7 +166,7 @@ def test_geo_lookup_by_address(httpx_mock: HTTPXMock):
         from httpx import HTTPStatusError
 
         with pytest.raises(HTTPStatusError) as e_char:
-            decoder.geo_lookup_by_address(address, api_key, client)
+            logic.geo_lookup_by_address(address, api_key, client)
         assert e_char.value.args[0] == expected_error
 
 
@@ -198,7 +198,7 @@ def test_confident_get_timezone_by_address(httpx_mock: HTTPXMock):
     }
     httpx_mock.add_response(json=mocked_response)
     with httpx.Client() as client:
-        assert decoder.get_timezone_by_address(address, key, client) == "CST"
+        assert logic.get_timezone_by_address(address, key, client) == "CST"
 
 
 def test_uncertain_get_timezone_by_address(httpx_mock: HTTPXMock):
@@ -229,7 +229,7 @@ def test_uncertain_get_timezone_by_address(httpx_mock: HTTPXMock):
     }
     httpx_mock.add_response(json=mocked_response)
     with httpx.Client() as client:
-        assert decoder.get_timezone_by_address(address, key, client) == "TBD"
+        assert logic.get_timezone_by_address(address, key, client) == "TBD"
 
 
 @pytest.fixture()
@@ -249,10 +249,10 @@ def test_read_csv(site_csv):
             "Address": "2 Chome-5-8 Higashishinagawa, Shinagawa City, Tokyo 140-0002, Japan",
         }
     }
-    assert decoder.read_csv(filename=site_csv) == expected_result
+    assert logic.read_csv(filename=site_csv) == expected_result
     bad_filename = "bogus"
     with pytest.raises(FileNotFoundError) as e_char:
-        decoder.read_csv(filename=bad_filename)
+        logic.read_csv(filename=bad_filename)
     assert e_char.value.strerror == "No such file or directory"
 
 def test_create_netbios_compatible_name(site_csv, httpx_mock: HTTPXMock):
@@ -266,4 +266,4 @@ def test_create_netbios_compatible_name(site_csv, httpx_mock: HTTPXMock):
                 'api_key': '', 
                 'site_csv': site_csv,
                 'client': client}
-        assert decoder.create_netbios_compatible_name(**test_params) == '02vJSTcsr-01-te'
+        assert logic.create_netbios_compatible_name(**test_params) == '02vJSTcsr-01-te'

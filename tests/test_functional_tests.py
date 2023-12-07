@@ -1,7 +1,7 @@
 import pytest
 import os
 from dotenv import load_dotenv
-import src.dmw_decoder.decoder as decoder
+import src.dmw_decoder.logic as logic
 import json
 
 load_dotenv()
@@ -15,4 +15,4 @@ with open('tests/functional_test_permutations.json') as file:
 @pytest.mark.parametrize("params, expected_result", permutations)
 def test_functional_testing_for_all_valid_options(params, expected_result):
     params['api_key'] = api_key
-    assert decoder.main(**params) == expected_result 
+    assert logic.main(**params) == expected_result 

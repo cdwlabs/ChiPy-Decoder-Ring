@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-import src.dmw_decoder.decoder as decoder
+import src.dmw_decoder.logic as logic
 
 '''
 This "utility" creates all permutations for valid system names
@@ -43,7 +43,7 @@ for i, tup in enumerate(all_permutations):
         "component": tup[3],
         "api_key": tup[4],
     }
-    output = decoder.main(**params)
+    output = logic.main(**params)
     del params["api_key"]
     single_test_data = (params, output)
     everything.append(single_test_data)

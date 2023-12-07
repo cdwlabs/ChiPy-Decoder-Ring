@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 
-import src.dmw_decoder.decoder as decoder
+import src.dmw_decoder.logic as logic
 
 load_dotenv()
 
@@ -134,4 +134,4 @@ address = "625 W Adams St, Chicago, IL  60661, United States"
 
 
 def test_geo_lookup_by_address_integration():
-    assert decoder.geo_lookup_by_address(address, api_key) == expected_result
+    assert logic.geo_lookup_by_address(address, api_key) == expected_result
