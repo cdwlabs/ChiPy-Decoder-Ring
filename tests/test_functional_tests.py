@@ -1,7 +1,7 @@
 import pytest
 import os
 from dotenv import load_dotenv
-import decoder
+import src.dmw_decoder.decoder as decoder
 import json
 
 load_dotenv()

@@ -2,7 +2,7 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-import decoder
+import src.dmw_decoder.decoder as decoder
 
 mock_csv_dict = {
     "01": {

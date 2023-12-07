@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-import decoder
+import src.dmw_decoder.decoder as decoder
 
 '''
 This "utility" creates all permutations for valid system names
