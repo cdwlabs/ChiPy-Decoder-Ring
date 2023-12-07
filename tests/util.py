@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-import decoder
+from src.dmw_decoder.logic import Decoder
 
 '''
 This "utility" creates all permutations for valid system names
@@ -40,11 +40,10 @@ for i, tup in enumerate(all_permutations):
         "building_id": tup[0],
         "device_function": tup[1],
         "entity": tup[2],
-        "component": tup[3],
-        "api_key": tup[4],
+        "component": tup[3]
     }
-    output = decoder.main(**params)
-    del params["api_key"]
+    decode = Decoder(api_key=api_key, site_csv='tests/Buildings.csv')
+    output = decode.create_netbios_compatible_name(**params)
     single_test_data = (params, output)
     everything.append(single_test_data)
     time.sleep(0.05)

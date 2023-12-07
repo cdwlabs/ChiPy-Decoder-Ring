@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dmw_decoder"
+version = "0.0.1"
+authors = [
+  { name="Colin Vallance", email="colin.vallance@cdw.com" },
+]
+description = "A small package to generate names per DMW convention"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "httpx ~=0.25.2",
+]
+
+[project.optional-dependencies]
+tests = [
+    'pytest>=7.4.3',
+    'pytest-httpx>=0.27.0',
+    'python-dotenv>=1.0.0'
+    ]
+
+[project.urls]
+Homepage = "https://github.com/cdwlabs/ChiPy-Decoder-Ring"
+Issues = "https://github.com/cdwlabs/ChiPy-Decoder-Ring/issues"
