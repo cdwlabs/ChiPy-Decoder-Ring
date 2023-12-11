@@ -21,3 +21,5 @@ This simple package uses Drink More Water Ltd. standards to create names for IT 
 - Component
   - This can be whatever the user wants
   - Only allowed to use remaining characters to remain NetBios compatible
+
+©2023 CDW LLC
