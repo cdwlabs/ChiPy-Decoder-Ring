@@ -1,0 +1,1 @@
+plugins/modules/decoder_ring.py validate-modules:missing-gplv3-license
