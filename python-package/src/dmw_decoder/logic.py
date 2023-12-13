@@ -1,12 +1,21 @@
 import csv
+import importlib.resources
+import pathlib
 
 import httpx
 
-class Decoder():
-    def __init__(self, api_key: str, site_csv: str = 'Buildings.csv', client = httpx.Client()):
+
+class Decoder:
+    def __init__(
+        self,
+        api_key: str,
+        site_csv: pathlib.Path = importlib.resources.files("dmw_decoder.data")
+        / "Buildings.csv",
+        client=httpx.Client(),
+    ):
         self.api_key = api_key
         self.site_csv = site_csv
-        self.client = client  
+        self.client = client
 
     def read_csv(self) -> dict:
         addresses = {}
@@ -16,14 +25,12 @@ class Decoder():
                 addresses[building_id] = line
         return addresses
 
-
     def get_address_by_building_id(self, csv_data: dict, building_id: str) -> str:
         normalized_building_id = self.normalize_building_id(building_id)
         try:
             return csv_data[normalized_building_id]["Address"]
         except KeyError:
             raise KeyError(f"The value {building_id} is not in lookup csv.")
-
 
     def geo_lookup_by_address(self, lookup_address: str) -> dict:
         base_url = "https://api.geoapify.com/v1/geocode/search?text="
@@ -32,7 +39,6 @@ class Decoder():
         response.raise_for_status()
         return response.json()
 
-
     def get_timezone_by_address(self, lookup_address: str) -> str:
         geo_data = self.geo_lookup_by_address(lookup_address)
         # If confidence is > 45% return first result's timezone
@@ -40,7 +46,6 @@ class Decoder():
             return geo_data["results"][0]["timezone"]["abbreviation_STD"]
         else:
             return "TBD"
-
 
     def normalize_building_id(self, building_id: str) -> str:
         try:
@@ -57,9 +62,13 @@ class Decoder():
         else:
             return building_id
 
-
     def format_device_function(self, device: str) -> str:
         device = device.lower().strip()
+        # Potential pitfall!
+        # We wanted to use a newer Python feature (match statement)
+        # but for our supported version of Ansible we need to allow
+        # for Python 3.9 users to run this code.
+        """
         match device:
             case "server":
                 return "s"
@@ -73,7 +82,19 @@ class Decoder():
                 return "o"
             case _:
                 raise ValueError("Invalid option")
-
+        """
+        if "server" in device:
+            return "s"
+        elif "network" in device:
+            return "n"
+        elif "virtualized" in device:
+            return "v"
+        elif "app" in device:
+            return "a"
+        elif "other" in device:
+            return "o"
+        else:
+            raise ValueError("Invalid option")
 
     def netbios_compatibility_check(self, name: str) -> None:
         disallowed = ["\\", "/", ":", "*", "?", '"', "<", ">", "|"]
@@ -86,7 +107,6 @@ class Decoder():
         if len(name) > max_length:
             raise ValueError("Name exceeds maximum length")
 
-
     def entity_check(self, name: str) -> str:
         min_length = 3
         max_length = 7
@@ -96,7 +116,6 @@ class Decoder():
             raise ValueError("Name exceeds maximum length")
         else:
             return name
-
 
     def truncate_component(self, component: str, name: str) -> str:
         max_length = 15
@@ -109,15 +128,18 @@ class Decoder():
             leftovers = component[:remaining_chars]
             return leftovers
 
-
-    def create_netbios_compatible_name(self, building_id: str, device_function: str, entity: str, component: str) -> str:
+    def create_netbios_compatible_name(
+        self, building_id: str, device_function: str, entity: str, component: str
+    ) -> str:
         sites = self.read_csv()
         normal_building_id = self.normalize_building_id(building_id)
         formatted_device_function = self.format_device_function(device_function)
         address = self.get_address_by_building_id(sites, building_id)
         timezone = self.get_timezone_by_address(address)
         checked_entity = self.entity_check(entity)
-        partial_name = f"{normal_building_id}{formatted_device_function}{timezone}{checked_entity}"
+        partial_name = (
+            f"{normal_building_id}{formatted_device_function}{timezone}{checked_entity}"
+        )
         formatted_component = self.truncate_component(component, partial_name)
         final_name = partial_name + formatted_component
         self.netbios_compatibility_check(final_name)

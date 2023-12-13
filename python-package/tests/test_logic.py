@@ -49,7 +49,7 @@ mock_csv_dict = {
 
 
 def test_normalize_building_id():
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     assert decode.normalize_building_id("5") == "05"
     assert decode.normalize_building_id("15") == "15"
     with pytest.raises(ValueError):
@@ -59,7 +59,7 @@ def test_normalize_building_id():
 
 
 def test_format_device_function():
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     assert decode.format_device_function("server") == "s"
     assert decode.format_device_function("network") == "n"
     assert decode.format_device_function("virtualized") == "v"
@@ -76,7 +76,7 @@ def test_format_device_function():
 
 @pytest.mark.parametrize("disallowed", ["\\", "/", ":", "*", "?", '"', "<", ">", "|"])
 def test_netbios_compatibility_check_disallowed(disallowed):
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     with pytest.raises(ValueError) as e_char:
         decode.netbios_compatibility_check(disallowed)
     assert str(e_char.value) == "Name contains disallowed character"
@@ -86,14 +86,14 @@ def test_netbios_compatibility_check_disallowed(disallowed):
 
 
 def test_netbios_compatibility_check_min():
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     with pytest.raises(ValueError) as e_char:
         decode.netbios_compatibility_check("")
     assert str(e_char.value) == "Name does not meet minimum length"
 
 
 def test_netbios_compatibility_check_max():
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     with pytest.raises(ValueError) as e_char:
         decode.netbios_compatibility_check("Too long for NetBIOS I'm afraid")
     assert str(e_char.value) == "Name exceeds maximum length"
@@ -109,14 +109,14 @@ def test_netbios_compatibility_check_max():
     ],
 )
 def test_truncate_component(test_name, test_component, expected):
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     result = decode.truncate_component(name=test_name, component=test_component)
     assert len(result) + len(test_name) <= 15
     assert result == expected
 
 
 def test_truncate_component_got_long_name():
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     with pytest.raises(ValueError) as e_char:
         decode.truncate_component(name="This name is too long", component="NA")
     assert str(e_char.value) == "Name exceeds maximum length"
@@ -136,13 +136,13 @@ def test_truncate_component_got_long_name():
     ],
 )
 def test_get_address_by_building_id(id, expected_address):
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     address = decode.get_address_by_building_id(mock_csv_dict, id)
     assert address == expected_address
 
 
 def test_get_address_by_bad_building_id():
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     bad_building_id = "33"
     with pytest.raises(KeyError) as e_char:
         decode.get_address_by_building_id(mock_csv_dict, bad_building_id)
@@ -150,7 +150,7 @@ def test_get_address_by_bad_building_id():
 
 
 def test_entity_check():
-    decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+    decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
     assert decode.entity_check("Valid") == "Valid"
     with pytest.raises(ValueError) as e_char:
         decode.entity_check("A")
@@ -166,14 +166,16 @@ def test_geo_lookup_by_address(httpx_mock: HTTPXMock):
     with httpx.Client() as mock_client:
         address = "address"
         api_key = "key"
-        decode = Decoder(api_key='key', site_csv='tests/Buildings.csv', client=mock_client)
+        decode = Decoder(api_key='key', site_csv='src/dmw_decoder/data/Buildings.csv', client=mock_client)
         assert decode.geo_lookup_by_address(address) == {
             "key1": "value1",
             "key2": "value2",
         }
 
         httpx_mock.add_response(status_code=404)
-        expected_error = "Client error '404 Not Found' for url 'https://api.geoapify.com/v1/geocode/search?text=address&format=json&apiKey=key'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+        expected_error = ("Client error '404 Not Found' for url "
+        "'https://api.geoapify.com/v1/geocode/search?text=address&format=json&apiKey=key'\n"
+        "For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404")
         from httpx import HTTPStatusError
 
         with pytest.raises(HTTPStatusError) as e_char:
@@ -209,7 +211,7 @@ def test_confident_get_timezone_by_address(httpx_mock: HTTPXMock):
     }
     httpx_mock.add_response(json=mocked_response)
     with httpx.Client() as client:
-        decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+        decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
         assert decode.get_timezone_by_address(address) == "CST"
 
 
@@ -241,7 +243,7 @@ def test_uncertain_get_timezone_by_address(httpx_mock: HTTPXMock):
     }
     httpx_mock.add_response(json=mocked_response)
     with httpx.Client() as client:
-        decode = Decoder(api_key='', site_csv='tests/Buildings.csv')
+        decode = Decoder(api_key='', site_csv='src/dmw_decoder/data/Buildings.csv')
         assert decode.get_timezone_by_address(address) == "TBD"
 
 

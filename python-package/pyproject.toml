@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A small package to generate names per DMW convention"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -29,3 +29,10 @@ tests = [
 [project.urls]
 Homepage = "https://github.com/cdwlabs/ChiPy-Decoder-Ring"
 Issues = "https://github.com/cdwlabs/ChiPy-Decoder-Ring/issues"
+
+[tool.setuptools.packages.find]
+namespaces = true
+where = ["src"]
+
+[tool.setuptools.package-data]
+"dmw_decoder.data" = ["*.csv"]
