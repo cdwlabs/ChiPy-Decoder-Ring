@@ -1,0 +1,11 @@
+---
+- chipy.decoder_ring.decoder_ring_facts:
+    api_key: "{{ dmw_decoder_api_key }}"
+    building_id: "2"
+    component: -01-temp
+    device_function: virtualized
+    entity: csr
+
+- ansible.builtin.assert:
+    that:
+      - dmw_decoder_hostname == "02vJSTcsr-01-te"
